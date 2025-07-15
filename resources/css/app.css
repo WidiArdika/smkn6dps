@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import 'tailwindcss';
+@source "../views";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-inter: "Inter", sans-serif;
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+.scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+:fullscreen,
+:-webkit-full-screen,
+:-moz-full-screen {
+    width: 100%;
+    height: 100%;
+}
+
+/* Custom CSS untuk infinite slider */
+@keyframes scroll {
+    to {
+        transform: translate(calc(-50% - 0.5rem));
+    }
+}
+.animate-scroll-slow {
+    animation: scroll 60s linear infinite forwards;
+}
+.animate-scroll-fast {
+    animation: scroll 30s linear infinite forwards;
+}
+.animate-scroll-reverse-slow {
+    animation: scroll 60s linear infinite reverse;
+}
+.animate-scroll-reverse-fast {
+    animation: scroll 30s linear infinite reverse;
+}
+.mask-fade {
+    -webkit-mask: linear-gradient(90deg, transparent, white 20%, white 80%, transparent);
+    mask: linear-gradient(90deg, transparent, white 20%, white 80%, transparent);
+}
+
+/* Prose Tailwind Manual */
+@tailwind utilities;
+
+@layer utilities {
+    .content-style {
+        /* Heading styling */
+        @apply [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-gray-900 [&_h1]:mb-6 [&_h1]:mt-8 [&_h1]:leading-tight;
+        @apply [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mb-4 [&_h2]:mt-6 [&_h2]:leading-tight;
+        @apply [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mb-3 [&_h3]:mt-5 [&_h3]:leading-snug;
+        @apply [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:text-gray-800 [&_h4]:mb-3 [&_h4]:mt-4 [&_h4]:leading-snug;
+        @apply [&_h5]:text-base [&_h5]:font-medium [&_h5]:text-gray-800 [&_h5]:mb-2 [&_h5]:mt-4 [&_h5]:leading-normal;
+        @apply [&_h6]:text-sm [&_h6]:font-medium [&_h6]:text-gray-700 [&_h6]:mb-2 [&_h6]:mt-3 [&_h6]:leading-normal [&_h6]:uppercase [&_h6]:tracking-wide;
+        
+        /* First heading margin adjustment */
+        @apply [&_h1:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0 [&_h4:first-child]:mt-0 [&_h5:first-child]:mt-0 [&_h6:first-child]:mt-0;
+        
+        /* Paragraph styling */
+        @apply [&_p]:mb-3 [&_p]:leading-relaxed [&_p]:text-gray-700;
+        
+        /* Ordered list styling */
+        @apply [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-2 [&_ol]:mb-4;
+        
+        /* Unordered list styling */
+        @apply [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_ul]:mb-4;
+        
+        /* List item styling */
+        @apply [&_li]:mb-1 [&_li]:leading-relaxed;
+        
+        /* Text formatting */
+        @apply [&_strong]:font-semibold [&_strong]:text-gray-900;
+        @apply [&_em]:italic [&_em]:text-gray-600;
+        @apply [&_u]:underline;
+        @apply [&_s]:line-through;
+        
+        /* Links */
+        @apply [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-800;
+        
+        /* Blockquote */
+        @apply [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-600 [&_blockquote]:my-4;
+        
+        /* Code styling */
+        @apply [&_code]:bg-gray-100 [&_code]:px-2 [&_code]:py-1 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono;
+        @apply [&_pre]:bg-gray-100 [&_pre]:p-4 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre]:my-4;
+        @apply [&_pre_code]:bg-transparent [&_pre_code]:p-0;
+        
+        /* Table styling */
+        @apply [&_table]:w-full [&_table]:border-collapse [&_table]:my-4;
+        @apply [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-50 [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold;
+        @apply [&_td]:border [&_td]:border-gray-300 [&_td]:px-4 [&_td]:py-2;
+        
+        /* Horizontal rule */
+        @apply [&_hr]:border-gray-300 [&_hr]:my-6;
+        
+        /* Image styling */
+        @apply [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:my-4;
+        
+        /* Nested lists */
+        @apply [&_ol_ol]:list-[lower-alpha] [&_ol_ol]:mt-2;
+        @apply [&_ul_ul]:list-[circle] [&_ul_ul]:mt-2;
+        @apply [&_ol_ol_ol]:list-[lower-roman];
+        @apply [&_ul_ul_ul]:list-[square];
+    }
+
+    /* Untuk panggil line clamp di line-clamp-{{ $lineClamp }} agar dinamis */
+    .line-clamp-5 { @apply line-clamp-5; }
+    .line-clamp-6 { @apply line-clamp-6; }
+    .line-clamp-10 { @apply line-clamp-10; }
+    .line-clamp-15 { @apply line-clamp-15; }
+    .line-clamp-18 { @apply line-clamp-18; }
+    .line-clamp-20 { @apply line-clamp-20; }
+    .line-clamp-23 { @apply line-clamp-23; }
+    .line-clamp-25 { @apply line-clamp-25; }
+}
