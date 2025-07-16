@@ -19,6 +19,7 @@ use App\Filament\Resources\JurusanResource\Pages;
 use App\Helpers\ImageHelper;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\JurusanResource\RelationManagers;
+use App\Traits\SyncsUploadedFileToPublic;
 
 class JurusanResource extends Resource
 {
@@ -34,6 +35,8 @@ class JurusanResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
     protected static ?string $activeNavigationIcon = 'heroicon-s-book-open';
 
+    use SyncsUploadedFileToPublic;
+
     public static function form(Form $form): Form
     {
         return $form
@@ -48,6 +51,9 @@ class JurusanResource extends Resource
                     ->disk('public')
                     ->directory('jurusan-images')
                     ->required()
+                    ->afterStateUpdated(function ($state) {
+                        static::syncToPublicStorage('jurusan-images', $state);
+                    })
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
                     ->maxSize(2048)
                     ->helperText(new HtmlString(
