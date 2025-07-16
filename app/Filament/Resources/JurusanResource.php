@@ -78,7 +78,7 @@ class JurusanResource extends Resource
                     ->label('Gambar')
                     ->width(144)
                     ->height(96)
-                    ->disk('public'),
+                    ->view('tables.columns.custom-image'),
 
                 Tables\Columns\TextColumn::make('nama')
                     ->label('Judul')
