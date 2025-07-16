@@ -78,6 +78,7 @@ class JurusanResource extends Resource
                     ->label('Gambar')
                     ->width(144)
                     ->height(96)
+                    ->getStateUsing(fn ($record) => url('storage/' . $record->gambar))
                     ->disk('public'),
 
                 Tables\Columns\TextColumn::make('nama')
