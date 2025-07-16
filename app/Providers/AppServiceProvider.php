@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
 use App\Models\KontakHeader;
 use App\Models\Kontak;
+use App\Models\Jurusan;
 use App\Models\ProfileInfo;
 
 class AppServiceProvider extends ServiceProvider
@@ -38,6 +39,9 @@ class AppServiceProvider extends ServiceProvider
         
         // Set locale Indonesia
         Carbon::setLocale('id');
+
+        // Kirim variabel jurusans ke semua view
+        View::share('jurusans', Jurusan::latest()->get());
 
         // Share tanggal dengan timezone Bali (WITA)
         $waktu_bali = Carbon::now('Asia/Makassar'); // Timezone Bali/WITA
