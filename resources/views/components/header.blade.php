@@ -143,8 +143,8 @@
                             @foreach ($jurusans as $jurusan)
                                 <li>
                                     <a href="{{ route('jurusan.show', ['jurusan' => $jurusan]) }}"
-                                        class="block px-4 py-2 text-stone-300 hover:bg-stone-800 hover:text-white">
-                                        {{ $jurusan->nama }} (ID: {{ $jurusan->id }})
+                                    class="block px-4 py-2 text-stone-300 hover:bg-stone-800 hover:text-white">
+                                        {{ $jurusan->nama }}
                                     </a>
                                 </li>
                             @endforeach
