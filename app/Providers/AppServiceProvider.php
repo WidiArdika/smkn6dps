@@ -40,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
         // Set locale Indonesia
         Carbon::setLocale('id');
 
+        View::composer('components.header', function ($view) {
+            $view->with('jurusans', Jurusan::orderBy('id', 'asc')->get());
+        });
+
         // Share tanggal dengan timezone Bali (WITA)
         $waktu_bali = Carbon::now('Asia/Makassar'); // Timezone Bali/WITA
         View::share('tanggal_header', $waktu_bali->translatedFormat('l, d F Y'));
