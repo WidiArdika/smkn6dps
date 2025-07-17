@@ -23,7 +23,7 @@ class header extends Component
     public function render(): View|Closure|string
     {
         return view('components.header', [
-            'jurusans' => Jurusan::orderBy('created_at', 'asc')->get(),
+            'jurusans' => Jurusan::orderBy('id', 'asc')->get(),
         ]);
     }
 }
