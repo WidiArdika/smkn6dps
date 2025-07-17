@@ -40,9 +40,6 @@ class AppServiceProvider extends ServiceProvider
         // Set locale Indonesia
         Carbon::setLocale('id');
 
-        // Kirim variabel jurusans ke semua view
-        View::share('jurusans', Jurusan::latest()->get());
-
         // Share tanggal dengan timezone Bali (WITA)
         $waktu_bali = Carbon::now('Asia/Makassar'); // Timezone Bali/WITA
         View::share('tanggal_header', $waktu_bali->translatedFormat('l, d F Y'));
