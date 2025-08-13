@@ -2,16 +2,23 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Resources\Resource;
 use App\Filament\Resources\BeritaResource\Pages;
+use App\Filament\Resources\BeritaResource\RelationManagers;
 use App\Models\Berita;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Illuminate\Support\Str;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\DatePicker;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Helpers\ImageHelper;
 
 class BeritaResource extends Resource
@@ -19,56 +26,53 @@ class BeritaResource extends Resource
     protected static ?string $model = Berita::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-newspaper';
+    protected static ?string $activeNavigationIcon = 'heroicon-s-newspaper';
+
     protected static ?string $navigationGroup = 'Informasi';
+
     protected static ?string $navigationLabel = 'Berita dan Kegiatan';
+
     protected static ?string $modelLabel = 'Berita dan Kegiatan';
     protected static ?string $pluralModelLabel = 'Berita dan Kegiatan';
 
     public static function form(Form $form): Form
     {
-        return $form->schema([
-            Forms\Components\TextInput::make('judul')
-                ->required()
-                ->label('Judul Berita')
-                ->maxLength(255),
+        return $form
+            ->schema([
+                TextInput::make('judul')
+                    ->required()
+                    ->label('Judul Berita')
+                    ->maxLength(255),
 
-            Forms\Components\FileUpload::make('gambar')
-                ->disk('public')
-                ->label('Gambar')
-                ->directory('berita')
-                ->image()
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
-                ->maxSize(2048)
-                ->helperText(new HtmlString(
-                    'Nama file maksimal 50 karakter tanpa simbol<br>' .
-                    'Format: JPEG, JPG, PNG, WebP<br>' .
-                    'Rasio: 3:2 (Contoh: 1920x1280)<br>' .
-                    'Ukuran max: 2MB'
-                ))
-                ->uploadingMessage('Uploading image...')
-                ->placeholder('Pilih gambar')
-                ->required(),
+                FileUpload::make('gambar')
+                    ->disk('public')
+                    ->label('Gambar')
+                    ->directory('berita')
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
+                    ->maxSize(2048)
+                    ->helperText(new HtmlString(
+                        'Nama file maksimal 50 karakter tanpa menggunakan symbols<br>' .
+                        'Format yang didukung: JPEG, JPG, PNG, WebP<br>' .
+                        '<br>' .
+                        'Gunakan Rasio Gambar [ 3:2 ]<br>' .
+                        'Contoh ukuran dalam pixel : 1920x1280<br>' .
+                        'Ukuran file maksimal : 2MB'
+                    ))
+                    ->uploadingMessage('Uploading image...')
+                    ->placeholder('Select an image file')
+                    ->required(),
 
-            Forms\Components\RichEditor::make('deskripsi')
-                ->label('Deskripsi Berita')
-                ->required()
-                ->columnSpan(2)
-                ->fileAttachmentsDirectory('berita/rich')
-                ->fileAttachmentsDisk('public'),
+                RichEditor::make('deskripsi')
+                    ->label('Deskripsi Berita')
+                    ->required()
+                    ->columnSpan(2)
+                    ->fileAttachmentsDirectory('berita/rich')
+                    ->fileAttachmentsDisk('public'),
 
-            Forms\Components\DatePicker::make('tanggal')
-                ->required(),
-
-            // Field status publish/draft
-            Forms\Components\Select::make('status')
-                ->label('Status')
-                ->options([
-                    'draft' => 'Draft',
-                    'published' => 'Published',
-                ])
-                ->default('draft')
-                ->visible(fn () => Gate::allows('publish', Berita::class)), // cek policy
-        ]);
+                DatePicker::make('tanggal')
+                    ->required(),
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -88,9 +92,9 @@ class BeritaResource extends Resource
                     ->wrap(),
 
                 Tables\Columns\TextColumn::make('deskripsi')
-                    ->label('Deskripsi')
+                    ->label('Deskripsi Berita')
                     ->searchable()
-                    ->formatStateUsing(fn (string $state) =>
+                    ->formatStateUsing(fn (string $state): string => 
                         Str::limit(strip_tags($state), 500, '...')
                     )
                     ->html()
@@ -100,14 +104,9 @@ class BeritaResource extends Resource
                     ->label('Tanggal')
                     ->searchable()
                     ->sortable(),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->colors([
-                        'secondary' => 'draft',
-                        'success' => 'published',
-                    ]),
+            ])
+            ->filters([
+                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -129,6 +128,13 @@ class BeritaResource extends Resource
                 ]),
             ])
             ->emptyStateHeading('Tidak ada data Berita');
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
     }
 
     public static function getPages(): array

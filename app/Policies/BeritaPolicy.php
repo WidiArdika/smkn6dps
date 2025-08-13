@@ -105,12 +105,4 @@ class BeritaPolicy
     {
         return $user->can('reorder_berita');
     }
-
-    /**
-     * Determine whether the user can publish the model.
-     */
-    public function publish(User $user): bool
-    {
-        return $user->can('publish_berita');
-    }
 }
