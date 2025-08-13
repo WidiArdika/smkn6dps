@@ -3,22 +3,17 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\BeritaResource\Pages;
-use App\Filament\Resources\BeritaResource\RelationManagers;
 use App\Models\Berita;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Illuminate\Support\Str;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\DatePicker;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Helpers\ImageHelper;
 
 class BeritaResource extends Resource
@@ -26,16 +21,12 @@ class BeritaResource extends Resource
     protected static ?string $model = Berita::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-newspaper';
-    protected static ?string $activeNavigationIcon = 'heroicon-s-newspaper';
-
     protected static ?string $navigationGroup = 'Informasi';
-
     protected static ?string $navigationLabel = 'Berita dan Kegiatan';
-
     protected static ?string $modelLabel = 'Berita dan Kegiatan';
     protected static ?string $pluralModelLabel = 'Berita dan Kegiatan';
 
-    public static function form(Form $form): Form
+    public static function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->schema([
@@ -52,15 +43,11 @@ class BeritaResource extends Resource
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
                     ->maxSize(2048)
                     ->helperText(new HtmlString(
-                        'Nama file maksimal 50 karakter tanpa menggunakan symbols<br>' .
-                        'Format yang didukung: JPEG, JPG, PNG, WebP<br>' .
-                        '<br>' .
-                        'Gunakan Rasio Gambar [ 3:2 ]<br>' .
-                        'Contoh ukuran dalam pixel : 1920x1280<br>' .
-                        'Ukuran file maksimal : 2MB'
+                        'Nama file maksimal 50 karakter tanpa symbols<br>' .
+                        'Format: JPEG, JPG, PNG, WebP<br>' .
+                        'Rasio Gambar [3:2] Contoh: 1920x1280<br>' .
+                        'Maksimal: 2MB'
                     ))
-                    ->uploadingMessage('Uploading image...')
-                    ->placeholder('Select an image file')
                     ->required(),
 
                 RichEditor::make('deskripsi')
@@ -70,12 +57,11 @@ class BeritaResource extends Resource
                     ->fileAttachmentsDirectory('berita/rich')
                     ->fileAttachmentsDisk('public'),
 
-                DatePicker::make('tanggal')
-                    ->required(),
+                DatePicker::make('tanggal')->required(),
             ]);
     }
 
-    public static function table(Table $table): Table
+    public static function table(Tables\Table $table): Tables\Table
     {
         return $table
             ->columns([
@@ -93,22 +79,55 @@ class BeritaResource extends Resource
 
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi Berita')
-                    ->searchable()
-                    ->formatStateUsing(fn (string $state): string => 
+                    ->formatStateUsing(fn (string $state): string =>
                         Str::limit(strip_tags($state), 500, '...')
                     )
                     ->html()
                     ->wrap(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->colors([
+                        'secondary' => 'draft',
+                        'success' => 'published',
+                    ])
+                    ->label('Status'),
 
                 Tables\Columns\TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->searchable()
                     ->sortable(),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
+                Tables\Actions\Action::make('publish')
+                    ->label('Publish')
+                    ->icon('heroicon-o-check')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(function ($record) {
+                        /** @var \App\Models\User|null $user */
+                        $user = Auth::user();
+                        return $record->status === 'draft' && $user?->can('publish_berita');
+                    })
+                    ->action(function ($record) {
+                        $record->update(['status' => 'published']);
+                    }),
+
+                Tables\Actions\Action::make('draft')
+                    ->label('Set Draft')
+                    ->icon('heroicon-o-pencil')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->visible(function ($record) {
+                        /** @var \App\Models\User|null $user */
+                        $user = Auth::user();
+                        return $record->status === 'published' && $user?->can('publish_berita');
+                    })
+                    ->action(function ($record) {
+                        $record->update(['status' => 'draft']);
+                    }),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->before(function ($record) {
@@ -132,9 +151,7 @@ class BeritaResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
