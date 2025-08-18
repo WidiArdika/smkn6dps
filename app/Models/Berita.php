@@ -11,7 +11,7 @@ class Berita extends Model
 {
     use HasFactory, Sluggable;
 
-    protected $fillable = ['judul', 'gambar', 'deskripsi', 'tanggal', 'status', 'published_at'];
+    protected $fillable = ['judul', 'gambar', 'deskripsi', 'tanggal', 'status'];
 
     public function sluggable(): array
     {
@@ -27,5 +27,28 @@ class Berita extends Model
         static::saving(function ($model) {
             $model->slug = Str::slug($model->judul);
         });
+    }
+
+    // Scope untuk berita yang sudah dipublish
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published');
+    }
+
+    // Scope untuk draft
+    public function scopeDraft($query)
+    {
+        return $query->where('status', 'draft');
+    }
+
+    // Helper method untuk cek status
+    public function isPublished()
+    {
+        return $this->status === 'published';
+    }
+
+    public function isDraft()
+    {
+        return $this->status === 'draft';
     }
 }

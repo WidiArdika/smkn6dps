@@ -28,7 +28,7 @@ class HomePageController extends Controller
         $kepala_sekolah = KepalaSekolah::first();
 
         // ambil 4 berita terbaru
-        $beritasTerbaru = Berita::latest()->take(4)->get();
+        $beritasTerbaru = Berita::published()->latest()->take(4)->get();
         
         // ambil 3 berita terbaru
         $pengumumanTerbaru = Pengumuman::latest()->take(3)->get();
