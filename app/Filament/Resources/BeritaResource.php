@@ -11,12 +11,15 @@ use Filament\Resources\Resource;
 use Illuminate\Support\Str;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Helpers\ImageHelper;
@@ -72,6 +75,16 @@ class BeritaResource extends Resource
 
                 DatePicker::make('tanggal')
                     ->required(),
+
+                Select::make('status')
+                    ->label('Status Publikasi')
+                    ->options([
+                        'draft' => 'Draft',
+                        'published' => 'Published',
+                    ])
+                    ->default('draft')
+                    ->required()
+                    ->helperText('Draft: Tidak akan tampil di website. Published: Akan tampil di website.'),
             ]);
     }
 
@@ -91,25 +104,85 @@ class BeritaResource extends Resource
                     ->sortable()
                     ->wrap(),
 
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
+                    ->colors([
+                        'warning' => 'draft',
+                        'success' => 'published',
+                    ])
+                    ->icons([
+                        'heroicon-o-pencil' => 'draft',
+                        'heroicon-o-check-circle' => 'published',
+                    ])
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'published' => 'Published',
+                        default => $state,
+                    }),
+
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi Berita')
                     ->searchable()
                     ->formatStateUsing(fn (string $state): string => 
-                        Str::limit(strip_tags($state), 500, '...')
+                        Str::limit(strip_tags($state), 100, '...')
                     )
                     ->html()
-                    ->wrap(),
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->date('d M Y'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Filter Status')
+                    ->options([
+                        'draft' => 'Draft',
+                        'published' => 'Published',
+                    ])
+                    ->placeholder('Semua Status'),
             ])
             ->actions([
+                // Quick publish/unpublish action
+                Action::make('togglePublish')
+                    ->label(fn (Berita $record) => $record->status === 'published' ? 'Unpublish' : 'Publish')
+                    ->icon(fn (Berita $record) => $record->status === 'published' ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
+                    ->color(fn (Berita $record) => $record->status === 'published' ? 'warning' : 'success')
+                    ->size('sm')
+                    ->action(function (Berita $record) {
+                        $newStatus = $record->status === 'published' ? 'draft' : 'published';
+                        $record->update(['status' => $newStatus]);
+                        
+                        $message = $newStatus === 'published' 
+                            ? 'Berita "' . Str::limit($record->judul, 30) . '" berhasil dipublish!'
+                            : 'Berita "' . Str::limit($record->judul, 30) . '" berhasil di-unpublish!';
+                            
+                        Notification::make()
+                            ->title($message)
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Berita $record) => 
+                        ($record->status === 'published' ? 'Unpublish' : 'Publish') . ' Berita'
+                    )
+                    ->modalDescription(fn (Berita $record) => $record->status === 'published' 
+                        ? 'Berita ini akan disembunyikan dari website dan tidak dapat diakses pengunjung.' 
+                        : 'Berita ini akan dipublikasikan dan dapat diakses oleh pengunjung website.'
+                    )
+                    ->modalSubmitActionLabel(fn (Berita $record) => $record->status === 'published' ? 'Ya, Unpublish' : 'Ya, Publish'),
+
                 Tables\Actions\EditAction::make(),
+                
                 Tables\Actions\DeleteAction::make()
                     ->before(function ($record) {
                         ImageHelper::deleteImagesFromRecord($record, 'gambar', 'deskripsi', 'berita/rich');
@@ -118,6 +191,68 @@ class BeritaResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    // Bulk publish action
+                    Tables\Actions\BulkAction::make('publish')
+                        ->label('Publish Terpilih')
+                        ->icon('heroicon-o-eye')
+                        ->color('success')
+                        ->action(function ($records) {
+                            $count = 0;
+                            $records->each(function ($record) use (&$count) {
+                                if ($record->status === 'draft') {
+                                    $record->update(['status' => 'published']);
+                                    $count++;
+                                }
+                            });
+                            
+                            if ($count > 0) {
+                                Notification::make()
+                                    ->title($count . ' berita berhasil dipublish!')
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Tidak ada berita yang dipublish (semua sudah published)')
+                                    ->warning()
+                                    ->send();
+                            }
+                        })
+                        ->requiresConfirmation()
+                        ->modalHeading('Publish Berita Terpilih')
+                        ->modalDescription('Berita yang dipilih akan dipublikasikan ke website.')
+                        ->modalSubmitActionLabel('Ya, Publish'),
+                    
+                    // Bulk unpublish action
+                    Tables\Actions\BulkAction::make('unpublish')
+                        ->label('Unpublish Terpilih')
+                        ->icon('heroicon-o-eye-slash')
+                        ->color('warning')
+                        ->action(function ($records) {
+                            $count = 0;
+                            $records->each(function ($record) use (&$count) {
+                                if ($record->status === 'published') {
+                                    $record->update(['status' => 'draft']);
+                                    $count++;
+                                }
+                            });
+                            
+                            if ($count > 0) {
+                                Notification::make()
+                                    ->title($count . ' berita berhasil di-unpublish!')
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Tidak ada berita yang di-unpublish (semua masih draft)')
+                                    ->warning()
+                                    ->send();
+                            }
+                        })
+                        ->requiresConfirmation()
+                        ->modalHeading('Unpublish Berita Terpilih')
+                        ->modalDescription('Berita yang dipilih akan disembunyikan dari website.')
+                        ->modalSubmitActionLabel('Ya, Unpublish'),
+
                     Tables\Actions\DeleteBulkAction::make()
                         ->before(function ($records) {
                             foreach ($records as $record) {
@@ -127,7 +262,8 @@ class BeritaResource extends Resource
                         }),
                 ]),
             ])
-            ->emptyStateHeading('Tidak ada data Berita');
+            ->emptyStateHeading('Tidak ada data Berita')
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -144,5 +280,19 @@ class BeritaResource extends Resource
             'create' => Pages\CreateBerita::route('/create'),
             'edit' => Pages\EditBerita::route('/{record}/edit'),
         ];
+    }
+
+    // Menampilkan jumlah berita berdasarkan status di navigation badge
+    public static function getNavigationBadge(): ?string
+    {
+        $published = static::getModel()::published()->count();
+        $draft = static::getModel()::draft()->count();
+        
+        return $published . '/' . ($published + $draft);
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'primary';
     }
 }
