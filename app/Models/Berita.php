@@ -11,7 +11,7 @@ class Berita extends Model
 {
     use HasFactory, Sluggable;
 
-    protected $fillable = ['judul', 'gambar', 'deskripsi', 'tanggal'];
+    protected $fillable = ['judul', 'gambar', 'deskripsi', 'tanggal', 'status', 'published_at'];
 
     public function sluggable(): array
     {
